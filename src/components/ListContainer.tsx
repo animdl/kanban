@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { List, ID } from "../types";
 
 import TrashIcon from "./icons/TrashIcon";
@@ -8,17 +9,21 @@ import { CSS } from "@dnd-kit/utilities";
 interface Props {
     list: List;
     deleteList: (id: ID) => void;
+    updateList: (id: ID, title: string) => void;
 }
 
 function ListContainer(props: Props) {
-    const { list, deleteList } = props;
+    const { list, deleteList, updateList } = props;
+
+    const [editing, setEditing] = useState(false);
 
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
         id: list.id,
         data: {
             type: "list",
             list
-        }
+        },
+        disabled: editing
     });
 
     const style = {
@@ -46,9 +51,20 @@ function ListContainer(props: Props) {
             rounded-none
             ">
             {/* card header */}
-            <div {...attributes} {...listeners} className="card-title flex items-center justify-between h-16 p-2 cursor-grab">
+            <div {...attributes} {...listeners} onClick={() => { setEditing(true) }} className="card-title flex items-center justify-between h-16 p-2 cursor-grab">
                 <div className="p-4">
-                    {list.title}
+                    {!editing && list.title}
+                    {editing && (
+                        <input
+                            autoFocus
+                            onBlur={() => { setEditing(false) }}
+                            onKeyDown={(e) => { if (e.key === "Enter" || e.key === "Escape") { setEditing(false) } }}
+                            type="text"
+                            className="input input-bordered input-primary w-[180px]"
+                            value={list.title}
+                            onChange={(e) => { updateList(list.id, e.target.value) }}
+                        />
+                    )}
                 </div>
                 <button className="btn btn-outline btn-error" onClick={() => { deleteList(list.id) }}>
                     <TrashIcon />

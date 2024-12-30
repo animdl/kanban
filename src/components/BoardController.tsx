@@ -43,6 +43,16 @@ function BoardController() {
         return Date.now().toString();
     }
 
+    // function to update the title of a list
+    function updateList(id: ID, title: string) {
+        setLists(lists.map((list) => {
+            if (list.id === id) {
+                return { ...list, title };
+            }
+            return list;
+        }));
+    }
+
     // function to delete a list
     // this function is passed to the ListContainer component
     function deleteList(id: ID) {
@@ -63,10 +73,10 @@ function BoardController() {
     function onDragEnd(event: DragEndEvent) {
         const { active, over } = event;
 
-        if (active.id !== over.id) {
+        if (active.id !== over?.id) {
             setLists((lists) => {
                 const oldIndex = lists.findIndex((list) => list.id === active.id);
-                const newIndex = lists.findIndex((list) => list.id === over.id);
+                const newIndex = lists.findIndex((list) => list.id === over?.id);
                 return arrayMove(lists, oldIndex, newIndex);
             });
         }
@@ -79,7 +89,6 @@ function BoardController() {
             min-h-[calc(100vh-64px)]
             w-full
             items-center
-            overflow-x-hidden
             overflow-y-hidden
             p-8">
             <DndContext onDragStart={onDragStart} onDragEnd={onDragEnd} sensors={sensors}>
@@ -89,7 +98,7 @@ function BoardController() {
                         <SortableContext items={listIDs}>
                             {lists.map((list) => (
                                 <div>
-                                    <ListContainer key={list.id} list={list} deleteList={deleteList}/>
+                                    <ListContainer key={list.id} list={list} deleteList={deleteList} updateList={updateList} />
                                 </div>
                             ))}
                         </SortableContext>
@@ -114,7 +123,7 @@ function BoardController() {
                 {createPortal(
                     <DragOverlay>
                         {activeList && (
-                            <ListContainer list={activeList} deleteList={deleteList} />
+                            <ListContainer list={activeList} deleteList={deleteList} updateList={updateList}/>
                         )}
                     </DragOverlay>, document.body
                 )}
