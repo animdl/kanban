@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 
 import PlusIcon from "./icons/PlusIcon";
-import { List, ID } from "../types";
+import { List, ID, Task } from "../types";
 import ListContainer from "./ListContainer";
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, arrayMove } from "@dnd-kit/sortable";
@@ -16,6 +16,10 @@ function BoardController() {
     // stores the ids of the lists
     // useMemo is used to cache the list of ids between re-renders
     const listIDs = useMemo(() => lists.map((list) => list.id), [lists]);
+
+    // stores all the tasks within the board
+    // makes them of type task from the types file
+    const [tasks, setTasks] = useState<Task[]>([]);
 
     // stores the list that is currently being dragged
     const [activeList, setActiveList] = useState<List | null>(null);
@@ -43,20 +47,46 @@ function BoardController() {
         return Date.now().toString();
     }
 
-    // function to update the title of a list
-    function updateList(id: ID, title: string) {
-        setLists(lists.map((list) => {
-            if (list.id === id) {
-                return { ...list, title };
-            }
-            return list;
-        }));
+    // function to update the title of a list or task
+    function updateElement(id: ID, newText: string, elementType: string) {
+        if (elementType === "list") {
+            setLists(lists.map((list) => {
+                if (list.id === id) {
+                    return { ...list, newText };
+                }
+                return list;
+            }));
+        } else if (elementType === "task") {
+            setTasks(tasks.map((task) => {
+                if (task.id === id) {
+                    return { ...task, content: newText };
+                }
+                return task;
+            }))
+        }
     }
 
-    // function to delete a list
-    // this function is passed to the ListContainer component
-    function deleteList(id: ID) {
-        setLists(lists.filter((list) => list.id !== id));
+    // function to create a new task
+    function createTask(listId: ID) {
+        const newTask: Task = {
+            id: generateId(),
+            listId,
+            content: `Task ${tasks.length + 1}`,
+        }
+        setTasks([...tasks, newTask]);
+    }
+
+    // function to delete a task or list
+    // this function is passed to the TaskContainer component
+    function deleteElement(id: ID, elementType: string) {
+        if (elementType === "task") {
+            setTasks(tasks.filter((task) => task.id !== id));
+        } else if (elementType === "list") {
+            setLists(lists.filter((list) => list.id !== id));
+
+            // delete the tasks that belong to the deleted list
+            setTasks(tasks.filter((task) => task.listId !== id));
+        }
     }
 
     // function to handle the drag start event
@@ -89,6 +119,7 @@ function BoardController() {
             min-h-[calc(100vh-64px)]
             w-full
             items-center
+            overflow-x-auto
             overflow-y-hidden
             p-8">
             <DndContext onDragStart={onDragStart} onDragEnd={onDragEnd} sensors={sensors}>
@@ -98,7 +129,7 @@ function BoardController() {
                         <SortableContext items={listIDs}>
                             {lists.map((list) => (
                                 <div>
-                                    <ListContainer key={list.id} list={list} deleteList={deleteList} updateList={updateList} />
+                                    <ListContainer key={list.id} list={list} deleteElement={deleteElement} updateElement={updateElement} createTask={createTask} tasks={tasks.filter((task) => task.listId === list.id)}/>
                                 </div>
                             ))}
                         </SortableContext>
@@ -123,7 +154,7 @@ function BoardController() {
                 {createPortal(
                     <DragOverlay>
                         {activeList && (
-                            <ListContainer list={activeList} deleteList={deleteList} updateList={updateList}/>
+                            <ListContainer list={activeList} deleteElement={deleteElement} updateElement={updateElement} createTask={createTask} tasks={tasks.filter((task) => task.listId === activeList.id)}/>
                         )}
                     </DragOverlay>, document.body
                 )}
