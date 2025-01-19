@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { List, ID, Task } from "../types";
 
 import TrashIcon from "./icons/TrashIcon";
 import GrabIcon from "./icons/GrabIcon";
 
-import { useSortable } from "@dnd-kit/sortable";
+import { SortableContext, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import PlusIcon from "./icons/PlusIcon";
 import TaskContainer from "./TaskContainer";
@@ -24,6 +24,8 @@ function ListContainer(props: Props) {
 
     // stores whether the list is being edited
     const [editing, setEditing] = useState(false);
+
+    const taskIDs = useMemo(() => tasks.map((task) => task.id), [tasks]);
 
     // dnd hooks
     // the useSortable hook is used to transfer data to the dnd context
@@ -45,7 +47,19 @@ function ListContainer(props: Props) {
     // if the card is being dragged, show a transparent card in its place
     if (isDragging) {
         return (
-            <div ref={setNodeRef} style={style} className="card bg-base-300 h-[500px] max-h-[500px] w-[300px] min-w-[300px] flex flex-col rounded-none opacity-40 border-2 border-primary"></div>
+            <div ref={setNodeRef} style={style} className="
+                card 
+                bg-base-200 
+                h-[500px] 
+                max-h-[500px] 
+                w-[300px] 
+                min-w-[300px] 
+                flex 
+                flex-col 
+                rounded-none 
+                opacity-40 
+                border-2 
+                border-primary"/>
         );
     }
 
@@ -90,16 +104,18 @@ function ListContainer(props: Props) {
                     )}
                 </div>
                 {/* delete button */}
-                    <button className="btn btn-outline btn-error p-3" onClick={() => { deleteElement(list.id, "list") }}>
-                        <TrashIcon />
-                    </button>
+                <button className="btn btn-outline btn-error p-3" onClick={() => { deleteElement(list.id, "list") }}>
+                    <TrashIcon />
+                </button>
             </div>
 
             {/* card body */}
             <div className="card-body flex flex-grow gap-4 p-4 overflow-x-hidden overflow-y-auto">
-                {tasks.map((task) => (
-                    <TaskContainer key={task.id} task={task} deleteElement={deleteElement} updateElement={updateElement} />
-                ))}
+                <SortableContext items={taskIDs}>
+                    {tasks.map((task) => (
+                        <TaskContainer key={task.id} task={task} deleteElement={deleteElement} updateElement={updateElement} />
+                    ))}
+                </SortableContext>
             </div>
 
             {/* card footer */}
